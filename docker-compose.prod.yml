@@ -13,7 +13,7 @@ services:
     environment:
       - DB_CONN_STRING=mysql://playground:playground@mysql:3306/playground
       - ALLOWED_ORIGINS=http://localhost,http://localhost:8080,http://localhost:3000,https://pensive-raman-3248b3.netlify.app
-      - VIRTUAL_HOST=managro-sqlplayground.crossentropy.solutions
+      - VIRTUAL_HOST=my-endpoint-123.crossentropy.solutions
       - LETSENCRYPT_HOST=my-endpoint-123.crossentropy.solutions
       - LETSENCRYPT_EMAIL=david@crossentropy.solutions
     depends_on:
