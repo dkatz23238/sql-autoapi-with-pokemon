@@ -1,0 +1,389 @@
+# /usr/bin/python
+import pymysql
+pymysql.install_as_MySQLdb()
+
+# Automatic Rest API from SQLAlchemy DataModels
+from typing import Optional, List,Tuple
+import inspect
+
+from fastapi import FastAPI,Depends, FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+
+from pydantic import BaseModel
+
+from sqlalchemy import create_engine, exc, insert
+from sqlalchemy.dialects import mysql
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+import datetime
+import uvicorn
+import os
+import jwt
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.sql import text
+
+from sqlalchemy import Column, String, Integer
+
+class DoesNotExist(Exception):
+    pass
+
+class BadQQuery(Exception):
+    pass
+
+class Forbidden(Exception):
+    pass
+
+
+JWT_SECRET = "BABOONS_ARE_NOT_GIBBONS"
+
+app = FastAPI()
+conn_string = os.environ.get("DB_CONN_STRING")
+engine = create_engine(conn_string)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+_default_origins = "http://localhost,http://localhost:8080"
+
+origins = os.environ.get("ALLOWED_ORIGINS",_default_origins).split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+def marshall_dict(d: dict) -> dict:
+    _d = {}
+    for key in d:
+        if isinstance(d, datetime.datetime):
+            _d[key] = d[key].isoformat()
+        elif (isinstance(d, int) or isinstance(d, float) or isinstance(d, str)):
+            _d[key] = d[key]
+    return d
+
+def inspct_mbmrs(t: object) -> List[Tuple[str, str]]:
+    return [[str(i),str(j)] for i,j in inspect.getmembers(t)]
+
+def parse_query(q: str) -> dict:
+    if ":" not in q:
+        raise BadQQuery()
+
+    split = q.split(":")
+
+    if len(split) != 2:
+        raise BadQQuery()
+
+    k = split[0]
+    v = split[1]
+
+    try:
+        v = int(v)
+    except:
+        pass
+
+    return {k:v}
+
+# Dependency Injections
+def get_db() -> SessionLocal:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+### User and Authentication Services
+
+from restapp.datamodels.user_models import User
+from restapp.datamodels.interactable_views import AvailableSQLViews
+
+class UserPostModel(BaseModel):
+    username: str
+    password: str
+
+class UserGetModel(BaseModel):
+    id: int
+    username: str
+
+def create_user_with_session(db: Session, user: UserPostModel) -> int:
+    user_dict = user.dict()
+    user_dict["password"] = "ENCRYPTED____" + user_dict["password"]
+    stmt = insert(User).values(**user_dict)
+    r = db.execute(stmt)
+    db.commit()
+    _id = r.inserted_primary_key["id"]
+    return {"id":_id}
+
+def authenticate_user_with_session(db: Session, user: UserPostModel):
+    user_dict = user.dict()
+    uname = user_dict["username"]
+    user_dict["password"] = "ENCRYPTED____" + user_dict["password"]
+    queried_user = db.query(User).filter_by(**{"username":uname}).first()
+    if queried_user is None:
+        raise DoesNotExist(f"{uname} does not exist")
+    
+    if queried_user.password != user_dict["password"]:
+        raise Forbidden()
+    
+    encoded_jwt = jwt.encode({"sub": queried_user.id}, "secret", algorithm="HS256")
+    return {"token": encoded_jwt}
+
+class UserSignUpOut(BaseModel):
+    id: int
+
+class AuthOut(BaseModel):
+    token: str
+
+@app.post("/users/signup", response_model=UserSignUpOut, operation_id="user_sign_up_out", tags=["Users"])
+async def sign_up_user(new_user: UserPostModel, db: Session = Depends(get_db)):
+    try:
+        return create_user_with_session(db, new_user)
+    except exc.IntegrityError as e:
+        db.rollback()
+        return JSONResponse(
+            status_code=400, content={"succes": False, "error": e.orig.args[1]}
+        )
+
+@app.post("/users/authenticate", response_model=AuthOut, operation_id="authenticate", tags=["Users"])
+async def authenticate_user(user: UserPostModel, db: Session = Depends(get_db)):
+    try:
+        return authenticate_user_with_session(db, user)
+    except DoesNotExist as e:
+        db.rollback()
+        return JSONResponse(
+            status_code=404, content={"succes": False, "error": "not found"}
+        )
+    except Forbidden as e:
+        db.rollback()
+        return JSONResponse(status_code=403, content={"sucuess":False, "error":"You can't do that."})
+
+def get_available_views_with_session(db):
+    rows = db.query(AvailableSQLViews).all()
+    _rows = []
+    for r in rows:
+        _rows.append(str(r.name))
+    return _rows
+
+### Model Services
+{% for table_name in  api_tables %}
+from restapp.datamodels.models import {{table_name | snake_to_caps}}
+# Data Models
+class {{table_name | snake_to_caps}}PostModel(BaseModel):
+    {% for column in api_tables[table_name] %}
+    {% if column['name'] not in ["id", "created_at", "updated_at"] %}
+
+
+        {{column.name}}: {{column.type}}
+
+    {% endif %}
+    
+    {% endfor %}
+
+class {{table_name | snake_to_caps}}PutModel(BaseModel):
+    {% for column in api_tables[table_name] %}
+    {% if column['name'] not in ["id", "created_at", "updated_at"] %}
+        {{column.name}}: Optional[ {{column.type}} ]
+    {% endif %}
+    
+    {% endfor %}
+
+class {{table_name | snake_to_caps}}GetSingleModel(BaseModel):
+    {% for column in api_tables[table_name] %}
+        {% if column['is_nullable'] %}
+            {{column.name}}: Optional[ {{column.type}} ]
+        {% endif %}
+
+        {% if not column['is_nullable'] %}
+            {{column.name}}: {{column.type}}
+        {% endif %}   
+    {% endfor %}
+
+class {{table_name | snake_to_caps}}GetManyModel(BaseModel):
+    {{table_name}}s: List[{{table_name | snake_to_caps}}GetSingleModel]
+
+## Service functions for {{table_name | snake_to_caps}}
+def get_{{table_name}}_with_session(db: Session, skip: int = 0, limit: int = 100, q: Optional[str] = None) -> List[dict]:
+    if q:
+        try:
+            q = parse_query(q)
+            items = db.query({{table_name | snake_to_caps}}).filter_by(**q).offset(skip).limit(limit).all()
+            items = [marshall_dict(d.__dict__) for d in items]
+        except BadQQuery:
+            return JSONResponse(status_code=400, content={"message":"Bad q query param! Format must follow 'key:value'."})
+        except exc.InvalidRequestError:
+            return JSONResponse(status_code=400, content={"message":"Bad q query param! key must contain valid columns"})
+         
+    else:
+        items = db.query({{table_name | snake_to_caps}}).offset(skip).limit(limit).all()
+        items = [marshall_dict(d.__dict__) for d in items]
+    return items
+
+def get_single_{{table_name}}_with_session(db: Session, {{table_name}}_id) -> Optional[dict]:
+    item = db.query({{table_name | snake_to_caps}}).filter({{table_name | snake_to_caps}}.id == {{table_name}}_id).first()
+    if item is not None:
+        return marshall_dict(item.__dict__)
+    else:
+        return None
+
+def create_{{table_name}}_with_session(db: Session, {{table_name}}: {{table_name | snake_to_caps}}PostModel) -> int:
+    new_item = {{table_name | snake_to_caps}}
+    stmt = insert({{table_name | snake_to_caps}}).values(**{{table_name}}.dict()) 
+    # print((str(stmt)))
+    r = db.execute(stmt)
+    
+    db.commit()
+    return r.inserted_primary_key['id']
+
+def update_{{table_name}}_with_session(db: Session, {{table_name}}_id: int, {{table_name}}: {{table_name | snake_to_caps}}PutModel) -> dict:
+    update_dict = {k:v for k,v in {{table_name}}.dict().items() if v is not None }
+    item_to_update = (db.query({{table_name | snake_to_caps}})
+            .filter( {{table_name | snake_to_caps}}.id == {{table_name}}_id )
+            .update(update_dict))
+    db.commit()
+    return {"success":True}
+
+def delete_{{table_name}}_with_session(db: Session, {{table_name}}_id: int) -> dict:
+    el = db.query({{table_name | snake_to_caps}}).filter({{table_name | snake_to_caps}}.id == {{table_name}}_id).first()
+    if el is not None:
+        db.query({{table_name | snake_to_caps}}).filter_by(id = {{table_name}}_id ).delete()
+        db.commit()
+        return {"success":True}
+    else:
+        raise DoesNotExist()
+
+### APP ROUTES FOR {{table_name | snake_to_caps}}
+# Get Single
+@app.get(
+    "/{{table_name}}/{% raw %}{{% endraw %}{{table_name}}_id{% raw %}}{% endraw %}",
+    response_model={{table_name | snake_to_caps}}GetSingleModel,
+    operation_id="get_single_{{ table_name }}",
+    tags=["{{table_name | snake_to_caps}}"])
+async def get_single_{{table_name}}({{table_name}}_id: int, db: Session = Depends(get_db)):
+    _item = get_single_{{table_name}}_with_session(db, {{table_name}}_id)
+    if _item:
+        return _item
+    else:
+        return JSONResponse(status_code=404, content={"message":"Not Found"}) 
+
+# Get Many Resources
+@app.get(
+    "/{{table_name}}",
+    response_model=List[{{table_name | snake_to_caps}}GetSingleModel],
+    operation_id="get_many_{{ table_name }}",
+    tags=["{{table_name | snake_to_caps}}"])
+async def get_many_{{table_name}}(db: Session = Depends(get_db), q:Optional[str] = None,):
+    return get_{{table_name}}_with_session(db, q=q)
+
+# Create A Unique Resource
+@app.post("/{{table_name}}", operation_id="create_single_{{ table_name }}", tags=["{{table_name | snake_to_caps}}"])
+async def post_{{table_name}}(new_{{table_name}}: {{table_name | snake_to_caps}}PostModel, db: Session = Depends(get_db)):
+    try:
+        return create_{{table_name}}_with_session(db, new_{{table_name}})
+    except exc.IntegrityError as e:
+        db.rollback()
+        return JSONResponse(status_code=400, content={"succes":False, "error": e.orig.args[1]})
+
+# Update A Unique Resource
+@app.put("/{{table_name}}/{% raw %}{{% endraw %}{{table_name}}_id{% raw %}}{% endraw %}", operation_id="edit_single_{{ table_name }}", tags=["{{table_name | snake_to_caps}}"])
+async def put_{{table_name}}({{table_name}}_id: int, {{table_name}}: {{table_name | snake_to_caps}}PutModel, db: Session = Depends(get_db)):
+    try:
+        return update_{{table_name}}_with_session(db, {{table_name}}_id, {{table_name}})
+    except exc.IntegrityError as e:
+        db.rollback()
+        return JSONResponse(status_code=400, content={"succes":False, "error": e.orig.args[1]})
+
+# Delete A Unique Resource
+@app.delete(
+    "/{{table_name}}/{% raw %}{{% endraw %}{{table_name}}_id{% raw %}}{% endraw %}",
+    operation_id="delete_single_{{ table_name }}",
+    tags=["{{table_name | snake_to_caps}}"])
+async def delete_{{table_name}}({{table_name}}_id: int, db: Session = Depends(get_db)):
+    try:
+        return delete_{{table_name}}_with_session(db, {{table_name}}_id)
+    except DoesNotExist:
+        return JSONResponse(status_code=404, content={"message": "{{table_name}} does not exist with id == " + str( {{table_name}}_id )  })
+    except exc.IntegrityError as e:
+        db.rollback()
+        return JSONResponse(status_code=400, content={"succes":False, "error": e.orig.args[1]})
+
+{% endfor %}
+# Data Models
+class SqlViewModelOut(BaseModel):
+    keys: List[str]
+    rows: List[tuple]
+    total: int
+
+class AvailableViews(BaseModel):
+    views: List[str]
+
+def get_view_with_session(view, db, limit=100, offset=0):
+    r = db.execute(f"SELECT * FROM {view} LIMIT {str(limit)} OFFSET {str(offset)}")
+    x = r.fetchall()
+    return {
+        "keys":[str(s) for s in r.keys()],
+        "rows":[tuple(r) for r in x],
+        "total":len(x)
+    }
+
+def get_filtered_view_with_sessions(view, filter_key, filter_value, db, limit=100, offset=0):
+    if ((filter_key is None) and (filter_value is None)):
+        raise BadQQuery()
+
+    r = db.execute(f"SELECT * FROM {view} LIMIT 1 OFFSET 0")
+    
+    if not filter_key in [str(s) for s in r.keys()]:
+        raise BadQQuery()
+    
+    t = text(f"SELECT * FROM {view} WHERE {filter_key} = :filter_value LIMIT :limit OFFSET :offset")
+    r  = db.execute(
+        t,
+        {
+        "view": view,
+        "limit":limit,
+        "offset":offset,
+
+        "filter_value":filter_value
+        }
+            )
+    x = r.fetchall()
+    return {
+        "keys":[str(s) for s in r.keys()],
+        "rows":[tuple(r) for r in x],
+        "total":len(x)
+    }
+
+
+    
+@app.get(
+    "/views/{view}",
+    operation_id="query_view",
+    tags=["SQL Views"],
+    response_model=SqlViewModelOut
+)
+async def query_sql_views(
+    view: str, filter_key:Optional[str]=None, filter_value:Optional[str]=None, limit: int=200,offset: int=0, db: Session = Depends(get_db)):
+    if view not in get_available_views_with_session(db):
+        return JSONResponse(status_code=404, content={"succes":False, "error": "That view does not exist"})
+    
+    try:
+        if (filter_key and filter_value):
+            result = get_filtered_view_with_sessions(view, filter_key, filter_value, db, limit=100, offset=0)
+        else:    
+            result = get_view_with_session(view, db, limit, offset)
+        
+        return result
+    except BadQQuery as bq:
+        return JSONResponse(status_code=400, content={"succes":False, "error": "Bad Query"})
+
+
+@app.get(
+    "/views",
+    operation_id="available_views",
+    tags=["SQL Views"],
+    response_model=AvailableViews
+)
+async def query_sql_views(db: Session = Depends(get_db)):
+    return {"views":get_available_views_with_session(db)}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000, workers=8)

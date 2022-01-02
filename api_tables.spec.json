@@ -1,0 +1,120 @@
+{
+  "move": [
+    {
+      "name": "id",
+      "type": "int",
+      "is_pk": true,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    },
+    {
+      "name": "type_id",
+      "type": "int",
+      "is_pk": false,
+      "is_nullable": true,
+      "is_fk": true,
+      "has_default": false,
+      "_ftable": "type",
+      "_fcol": "id"
+    },
+    {
+      "name": "name",
+      "type": "str",
+      "is_pk": false,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    },
+    {
+      "name": "damage",
+      "type": "int",
+      "is_pk": false,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    }
+  ],
+  "pokemon": [
+    {
+      "name": "id",
+      "type": "int",
+      "is_pk": true,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    },
+    {
+      "name": "name",
+      "type": "str",
+      "is_pk": false,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    },
+    {
+      "name": "weight",
+      "type": "int",
+      "is_pk": false,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    },
+    {
+      "name": "height",
+      "type": "int",
+      "is_pk": false,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    }
+  ],
+  "pokemon_move": [
+    {
+      "name": "id",
+      "type": "int",
+      "is_pk": true,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    },
+    {
+      "name": "pokemon_id",
+      "type": "int",
+      "is_pk": false,
+      "is_nullable": true,
+      "is_fk": true,
+      "has_default": false,
+      "_ftable": "pokemon",
+      "_fcol": "id"
+    },
+    {
+      "name": "move_id",
+      "type": "int",
+      "is_pk": false,
+      "is_nullable": true,
+      "is_fk": true,
+      "has_default": false,
+      "_ftable": "move",
+      "_fcol": "id"
+    }
+  ],
+  "type": [
+    {
+      "name": "id",
+      "type": "int",
+      "is_pk": true,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    },
+    {
+      "name": "name",
+      "type": "str",
+      "is_pk": false,
+      "is_nullable": false,
+      "is_fk": false,
+      "has_default": false
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+version: "3.3"
+
+services:
+  webapp:
+    image: restapp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      - DB_CONN_STRING=mysql://playground:playground@mysql:3306/playground
+      - ALLOWED_ORIGINS=http://localhost,http://localhost:8080,http://localhost:3000,https://pensive-raman-3248b3.netlify.app
+      - VIRTUAL_HOST=managro-sqlplayground.crossentropy.solutions
+      - LETSENCRYPT_HOST=managro-sqlplayground.crossentropy.solutions
+      - LETSENCRYPT_EMAIL=david@crossentropy.solutions
+    depends_on:
+      - mysql
+
+  mysql:
+    image: "bitnami/mysql:latest"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_USER=playground
+      - MYSQL_PASSWORD=playground
+      - MYSQL_DATABASE=playground
+      - MYSQL_MASTER_PORT_NUMBER=3306
+      - MYSQL_AUTHENTICATION_PLUGIN=mysql_native_password
+
+    ports:
+      - "3306:3306"
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/etc/nginx/vhost.d"
+      - "/usr/share/nginx/html"
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+      - "/etc/nginx/certs"
+
+  letsencrypt-nginx-proxy-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    volumes_from:
+      - "nginx-proxy"

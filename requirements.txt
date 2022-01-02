@@ -1,0 +1,8 @@
+fastapi==0.70.0
+SQLAlchemy==1.4.25
+Jinja2==3.0.1
+black==21.9b0
+pymysql
+uvicorn
+gunicorn
+PyJWT==2.3.0

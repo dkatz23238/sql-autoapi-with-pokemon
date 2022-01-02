@@ -1,0 +1,81 @@
+[
+  [
+    "type",
+    [
+      { "name": "Normal" },
+      { "name": "Fighting" },
+      { "name": "Fire" },
+      { "name": "Ice" },
+      { "name": "Electric" }
+    ]
+  ],
+  [
+    "move",
+    [
+      { "name": "Pound", "type_id": 1, "damage": 96 },
+      { "name": "Karate Chop", "type_id": 2, "damage": 90 },
+      { "name": "Double Slap", "type_id": 2, "damage": 20 },
+      { "name": "Comet Punch", "type_id": 2, "damage": 140 },
+      { "name": "Mega Punch", "type_id": 2, "damage": 230 },
+      { "name": "Fire Punch", "type_id": 3, "damage": 140 },
+      { "name": "Ice Punch", "type_id": 4, "damage": 180 },
+      { "name": "Thunder Punch", "type_id": 5, "damage": 140 }
+    ]
+  ],
+  [
+    "pokemon",
+    [
+      { "name": "Pikachu", "weight": 20, "height": 50 },
+      { "name": "Hitmochan", "weight": 178, "height": 120 },
+      { "name": "Duclops", "weight": 200, "height": 130 },
+      { "name": "Dusknoir", "weight": 120, "height": 50 },
+      { "name": "Regigas", "weight": 500, "height": 180 },
+      { "name": "Nidoqueen", "weight": 2000, "height": 150 }
+    ]
+  ],
+  [
+    "pokemon_move",
+    [
+      {
+        "pokemon_id": 1,
+        "move_id": 1
+      },
+      {
+        "pokemon_id": 2,
+        "move_id": 1
+      },
+      {
+        "pokemon_id": 4,
+        "move_id": 2
+      },
+      {
+        "pokemon_id": 3,
+        "move_id": 1
+      },
+      {
+        "pokemon_id": 6,
+        "move_id": 3
+      },
+      {
+        "pokemon_id": 2,
+        "move_id": 5
+      },
+      {
+        "pokemon_id": 3,
+        "move_id": 6
+      },
+      {
+        "pokemon_id": 2,
+        "move_id": 2
+      },
+      {
+        "pokemon_id": 1,
+        "move_id": 1
+      },
+      {
+        "pokemon_id": 5,
+        "move_id": 5
+      }
+    ]
+  ]
+]
