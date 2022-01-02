@@ -226,13 +226,12 @@ def get_single_{{table_name}}_with_session(db: Session, {{table_name}}_id) -> Op
         return None
 
 def create_{{table_name}}_with_session(db: Session, {{table_name}}: {{table_name | snake_to_caps}}PostModel) -> int:
-    new_item = {{table_name | snake_to_caps}}
-    stmt = insert({{table_name | snake_to_caps}}).values(**{{table_name}}.dict()) 
+    new_{{table_name}} = {{table_name | snake_to_caps}}(**{{table_name}}.dict()) 
+    db.add(new_{{table_name}})
     # print((str(stmt)))
-    r = db.execute(stmt)
-    
+    # r = db.execute(stmt)
     db.commit()
-    return r.inserted_primary_key['id']
+    return new_{{table_name}}.id
 
 def update_{{table_name}}_with_session(db: Session, {{table_name}}_id: int, {{table_name}}: {{table_name | snake_to_caps}}PutModel) -> dict:
     update_dict = {k:v for k,v in {{table_name}}.dict().items() if v is not None }

@@ -272,13 +272,12 @@ def get_single_move_with_session(db: Session, move_id) -> Optional[dict]:
 
 
 def create_move_with_session(db: Session, move: MovePostModel) -> int:
-    new_item = Move
-    stmt = insert(Move).values(**move.dict())
+    new_move = Move(**move.dict())
+    db.add(new_move)
     # print((str(stmt)))
-    r = db.execute(stmt)
-
+    # r = db.execute(stmt)
     db.commit()
-    return r.inserted_primary_key["id"]
+    return new_move.id
 
 
 def update_move_with_session(db: Session, move_id: int, move: MovePutModel) -> dict:
@@ -444,13 +443,12 @@ def get_single_pokemon_with_session(db: Session, pokemon_id) -> Optional[dict]:
 
 
 def create_pokemon_with_session(db: Session, pokemon: PokemonPostModel) -> int:
-    new_item = Pokemon
-    stmt = insert(Pokemon).values(**pokemon.dict())
+    new_pokemon = Pokemon(**pokemon.dict())
+    db.add(new_pokemon)
     # print((str(stmt)))
-    r = db.execute(stmt)
-
+    # r = db.execute(stmt)
     db.commit()
-    return r.inserted_primary_key["id"]
+    return new_pokemon.id
 
 
 def update_pokemon_with_session(
@@ -622,13 +620,12 @@ def get_single_pokemon_move_with_session(
 def create_pokemon_move_with_session(
     db: Session, pokemon_move: PokemonMovePostModel
 ) -> int:
-    new_item = PokemonMove
-    stmt = insert(PokemonMove).values(**pokemon_move.dict())
+    new_pokemon_move = PokemonMove(**pokemon_move.dict())
+    db.add(new_pokemon_move)
     # print((str(stmt)))
-    r = db.execute(stmt)
-
+    # r = db.execute(stmt)
     db.commit()
-    return r.inserted_primary_key["id"]
+    return new_pokemon_move.id
 
 
 def update_pokemon_move_with_session(
@@ -807,13 +804,12 @@ def get_single_type_with_session(db: Session, type_id) -> Optional[dict]:
 
 
 def create_type_with_session(db: Session, type: TypePostModel) -> int:
-    new_item = Type
-    stmt = insert(Type).values(**type.dict())
+    new_type = Type(**type.dict())
+    db.add(new_type)
     # print((str(stmt)))
-    r = db.execute(stmt)
-
+    # r = db.execute(stmt)
     db.commit()
-    return r.inserted_primary_key["id"]
+    return new_type.id
 
 
 def update_type_with_session(db: Session, type_id: int, type: TypePutModel) -> dict:

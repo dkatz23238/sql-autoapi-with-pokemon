@@ -18,6 +18,8 @@ from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.selectable import FromGrouping
 from sqlalchemy.sql.sqltypes import Numeric
 from sqlalchemy import Index
+from sqlalchemy import event
+
 
 Base = declarative_base()
 
@@ -52,3 +54,10 @@ class PokemonMove(Base):
           UniqueConstraint('pokemon_id', 'move_id', name='uix_1')
     )
     
+@event.listens_for(Pokemon, "before_insert")
+def pokemon_before_insert(mapper, connection, target):
+    pass
+
+@event.listens_for(Pokemon, "after_insert")
+def pokemon_after_insert(mapper, connection, target):
+    pass

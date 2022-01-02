@@ -25,3 +25,9 @@ Populate models.py with valid data model and queries with sql views that should 
 ### 2) Quickstart
 
 Run the quickstart script
+
+### 3) Build ETL Container
+```sh
+docker build -f etl.Dockerfile -t restapp-etl:latest .
+docker run restap-etl:latest
+```
