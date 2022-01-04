@@ -103,8 +103,8 @@ def get_db() -> SessionLocal:
 
 ### User and Authentication Services
 
-from restapp.datamodels.user_models import User
-from restapp.datamodels.interactable_views import AvailableSQLViews
+from datamodels.user_models import User
+from datamodels.interactable_views import AvailableSQLViews
 
 
 class UserPostModel(BaseModel):
@@ -197,7 +197,7 @@ def get_available_views_with_session(db):
 
 ### Model Services
 
-from restapp.datamodels.models import Move
+from datamodels.models import Move
 
 # Data Models
 class MovePostModel(BaseModel):
@@ -368,7 +368,7 @@ async def delete_move(move_id: int, db: Session = Depends(get_db)):
         )
 
 
-from restapp.datamodels.models import Pokemon
+from datamodels.models import Pokemon
 
 # Data Models
 class PokemonPostModel(BaseModel):
@@ -547,7 +547,7 @@ async def delete_pokemon(pokemon_id: int, db: Session = Depends(get_db)):
         )
 
 
-from restapp.datamodels.models import PokemonMove
+from datamodels.models import PokemonMove
 
 # Data Models
 class PokemonMovePostModel(BaseModel):
@@ -741,7 +741,7 @@ async def delete_pokemon_move(pokemon_move_id: int, db: Session = Depends(get_db
         )
 
 
-from restapp.datamodels.models import Type
+from datamodels.models import Type
 
 # Data Models
 class TypePostModel(BaseModel):

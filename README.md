@@ -28,6 +28,6 @@ Run the quickstart script
 
 ### 3) Build ETL Container
 ```sh
-docker build -f etl.Dockerfile -t restapp-etl:latest .
-docker run restap-etl:latest
+docker build -f etl.Dockerfile -t pokemonrestapp-etl:latest .
+docker run --network basic_sql_app_default pokemonrestapp-etl:latest
 ```

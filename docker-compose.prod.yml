@@ -2,7 +2,7 @@ version: "3.3"
 
 services:
   webapp:
-    image: restapp:latest
+    image: pokemonrestapp:latest
     build:
       context: .
       dockerfile: Dockerfile

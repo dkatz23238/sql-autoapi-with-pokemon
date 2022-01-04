@@ -94,8 +94,8 @@ def get_db() -> SessionLocal:
         db.close()
 ### User and Authentication Services
 
-from restapp.datamodels.user_models import User
-from restapp.datamodels.interactable_views import AvailableSQLViews
+from datamodels.user_models import User
+from datamodels.interactable_views import AvailableSQLViews
 
 class UserPostModel(BaseModel):
     username: str
@@ -166,7 +166,7 @@ def get_available_views_with_session(db):
 
 ### Model Services
 {% for table_name in  api_tables %}
-from restapp.datamodels.models import {{table_name | snake_to_caps}}
+from datamodels.models import {{table_name | snake_to_caps}}
 # Data Models
 class {{table_name | snake_to_caps}}PostModel(BaseModel):
     {% for column in api_tables[table_name] %}

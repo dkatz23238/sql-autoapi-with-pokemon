@@ -105,10 +105,7 @@ if __name__ == "__main__":
     template = Template(_tplt)
 
     with open("app.py", "w") as f:
-        f.write(
-            template.render(api_tables=api_tables,
-                           )
-        )
+        f.write(template.render(api_tables=api_tables))
 
     # Clean up
     os.system("black app.py")

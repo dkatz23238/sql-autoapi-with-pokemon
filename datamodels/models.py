@@ -20,7 +20,6 @@ from sqlalchemy.sql.sqltypes import Numeric
 from sqlalchemy import Index
 from sqlalchemy import event
 
-
 Base = declarative_base()
 
 

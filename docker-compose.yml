@@ -2,7 +2,7 @@ version: "3.3"
 
 services:
   webapp:
-    image: restapp:latest
+    image: pokemonrestapp:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -19,7 +19,7 @@ services:
   mysql:
     image: "bitnami/mysql:latest"
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_ROOT_PASSWORD=playground
       - MYSQL_USER=playground
       - MYSQL_PASSWORD=playground
       - MYSQL_DATABASE=playground
